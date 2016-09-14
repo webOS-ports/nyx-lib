@@ -1,6 +1,6 @@
 /* @@@LICENSE
 *
-*      Copyright (c) 2010-2012 Hewlett-Packard Development Company, L.P.
+*      Copyright (c) 2010-2013 LG Electronics, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -30,12 +30,13 @@
 #include <nyx/module/nyx_device_internal.h>
 
 
-nyx_error_t nyx_sensor_acceleration_event_get_item(nyx_event_handle_t handle, nyx_sensor_acceleration_event_item_t *event_out_ptr)
+nyx_error_t nyx_sensor_acceleration_event_get_item(nyx_event_handle_t handle,
+        nyx_sensor_acceleration_event_item_t *event_out_ptr)
 {
-	nyx_event_t* e = (nyx_event_t*)handle;
+	nyx_event_t *e = (nyx_event_t *)handle;
 	CHECK_EVENT(e);
 	CHECK_EVENT_TYPE(e, NYX_EVENT_SENSOR_ACCELERATION);
-	nyx_event_sensor_acceleration_t* a = (nyx_event_sensor_acceleration_t *)e;
+	nyx_event_sensor_acceleration_t *a = (nyx_event_sensor_acceleration_t *)e;
 	*event_out_ptr = a->item;
 	return NYX_ERROR_NONE;
 }

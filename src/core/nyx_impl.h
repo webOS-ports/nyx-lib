@@ -1,6 +1,6 @@
 /* @@@LICENSE
 *
-*      Copyright (c) 2010-2012 Hewlett-Packard Development Company, L.P.
+*      Copyright (c) 2010-2013 LG Electronics, Inc.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
 /********************************************************************************
  * @file nyx_impl.h
  *
- * @brief internal nyx header 
- ********************************************************************************/ 
+ * @brief internal nyx header
+ ********************************************************************************/
 
 #ifndef NYX_IMPL_H_
 #define NYX_IMPL_H_
