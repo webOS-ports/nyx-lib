@@ -332,6 +332,33 @@ NYX_API_EXPORT nyx_error_t nyx_led_controller_core_configuration_create(
  *     brightness,
  *     duration,
  *     direction
+ *
+ *
+ *  Colour - NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_RED,
+ *           NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_GREEN,
+ *           NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_BLUE
+ *
+ *  Accepted alongside any effect above, on the core LEDs only; the backlight
+ *  LEDs ignore it. Each channel is 0..NYX_LED_CONTROLLER_CORE_COLOUR_MAX, and
+ *  out-of-range values are rejected with NYX_ERROR_INVALID_VALUE rather than
+ *  clamped.
+ *
+ *  Brightness scales the channels, so brightness keeps meaning intensity and
+ *  the colour keeps meaning hue:
+ *
+ *      out = channel * brightness / NYX_LED_CONTROLLER_CORE_COLOUR_MAX
+ *
+ *  Note that brightness is 0 by default for most effects, so setting a colour
+ *  without also setting brightness leaves the LED dark.
+ *
+ *  A channel left at NYX_LED_CONTROLLER_CORE_COLOUR_UNSET - the value a fresh
+ *  configuration carries - means the caller expressed no colour preference.
+ *  A module must then behave exactly as it did before these parameters
+ *  existed, which for a single-colour LED is the only thing it can do anyway.
+ *  This is what keeps callers that only ever set brightness working unchanged.
+ *
+ *  Not every LED can honour a colour. A module that drives a single-colour LED
+ *  is free to ignore these, or to derive an intensity from them.
  */
 /**
  * @brief Set a parameter in an LED core configuration.

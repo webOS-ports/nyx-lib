@@ -54,6 +54,18 @@ nyx_led_controller_effect_direction_t;
 
 
 /**
+ * @brief Value a colour channel carries until a caller sets one.
+ *
+ * @see NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_RED
+ */
+#define NYX_LED_CONTROLLER_CORE_COLOUR_UNSET (-1)
+
+/**
+ * @brief Largest value a colour channel accepts.
+ */
+#define NYX_LED_CONTROLLER_CORE_COLOUR_MAX   255
+
+/**
  * @brief Defines the parameters used by @ref nyx_led_controller_core_configuration_set_param().
  */
 typedef enum
@@ -88,6 +100,27 @@ typedef enum
 	NYX_LED_CONTROLLER_CORE_EFFECT_THIRD_OUT,       /**< third_out */
 
 	NYX_LED_CONTROLLER_CORE_EFFECT_DIRECTION,       /**< direction */
+
+	/*
+	 * Colour of a core LED, one 0-255 channel per parameter.
+	 *
+	 * Appended after DIRECTION on purpose: every value above keeps the number it
+	 * has always had, so a module built against an older copy of this header
+	 * still resolves the parameters it does know about.
+	 *
+	 * A freshly created configuration carries
+	 * NYX_LED_CONTROLLER_CORE_COLOUR_UNSET, meaning the caller expressed no
+	 * preference and the module should keep doing whatever it did before colour
+	 * existed. Where a colour is set, brightness scales it:
+	 *
+	 *     out = channel * brightness / NYX_LED_CONTROLLER_CORE_COLOUR_MAX
+	 *
+	 * so a caller that sets a colour has to set BRIGHTNESS too. It defaults to 0
+	 * for most effects, and 0 leaves the LED dark whatever the colour says.
+	 */
+	NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_RED,      /**< colour_red, 0-255 */
+	NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_GREEN,    /**< colour_green, 0-255 */
+	NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_BLUE,     /**< colour_blue, 0-255 */
 
 
 } nyx_led_controller_parameter_type_t;

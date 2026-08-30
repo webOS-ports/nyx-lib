@@ -57,6 +57,10 @@ typedef struct
 
 	int32_t direction;
 
+	int32_t colour_red;
+	int32_t colour_green;
+	int32_t colour_blue;
+
 	bool final;
 
 } nyx_led_controller_core_configuration;
@@ -76,6 +80,16 @@ nyx_error_t nyx_led_controller_core_configuration_create(
 	}
 
 	configuration->final = false;
+
+	/*
+	 * calloc() zeroed these, and zero is a legal colour - black. Every
+	 * effect starts with no colour expressed instead, so that a module can
+	 * tell "caller wants the LED off" from "caller never mentioned colour"
+	 * and keep its pre-colour behaviour in the second case.
+	 */
+	configuration->colour_red = NYX_LED_CONTROLLER_CORE_COLOUR_UNSET;
+	configuration->colour_green = NYX_LED_CONTROLLER_CORE_COLOUR_UNSET;
+	configuration->colour_blue = NYX_LED_CONTROLLER_CORE_COLOUR_UNSET;
 
 	/* common settings */
 	switch (effect_type)
@@ -217,6 +231,30 @@ nyx_error_t nyx_led_controller_core_configuration_set_param(
 			configuration->direction = new_value;
 			break;
 
+		case NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_RED:
+		case NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_GREEN:
+		case NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_BLUE:
+			if (new_value != NYX_LED_CONTROLLER_CORE_COLOUR_UNSET &&
+			        (new_value < 0 || new_value > NYX_LED_CONTROLLER_CORE_COLOUR_MAX))
+			{
+				return NYX_ERROR_INVALID_VALUE;
+			}
+
+			if (param == NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_RED)
+			{
+				configuration->colour_red = new_value;
+			}
+			else if (param == NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_GREEN)
+			{
+				configuration->colour_green = new_value;
+			}
+			else
+			{
+				configuration->colour_blue = new_value;
+			}
+
+			break;
+
 		default:
 			break;
 	}
@@ -316,6 +354,18 @@ nyx_error_t nyx_led_controller_core_configuration_get_param(
 
 		case NYX_LED_CONTROLLER_CORE_EFFECT_DIRECTION:
 			*value = configuration->direction;
+			break;
+
+		case NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_RED:
+			*value = configuration->colour_red;
+			break;
+
+		case NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_GREEN:
+			*value = configuration->colour_green;
+			break;
+
+		case NYX_LED_CONTROLLER_CORE_EFFECT_COLOUR_BLUE:
+			*value = configuration->colour_blue;
 			break;
 
 		default:
