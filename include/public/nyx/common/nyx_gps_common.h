@@ -18,6 +18,7 @@
 #define _NYX_GPS_COMMON_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <pthread.h>
@@ -543,6 +544,68 @@ typedef struct
 	nyx_agps_ril_request_set_id_callback    ril_request_set_id_cb;
 	nyx_agps_ril_request_ref_loc_callback   ril_request_ref_loc_cb;
 } nyx_agps_ril_callbacks_t;
+
+
+
+/**
+ * Maximum length of the text returned by nyx_gps_get_debug_data(), including
+ * the terminating NUL.
+ */
+#define NYX_GPS_DEBUG_DATA_MAXLEN 4096
+
+/**
+ * Non-framework location notification.
+ *
+ * This is not a network-initiated request and carries no response: it reports
+ * that something outside the platform - a carrier, the modem, or the GNSS chip
+ * vendor - asked for the device's location, and whether that was granted. It
+ * exists to be shown to the user after the fact, where an NI notification asks
+ * the user to decide beforehand.
+ */
+typedef uint8_t nyx_gps_nfw_protocol_stack_t;
+#define NYX_GPS_NFW_PROTOCOL_CTRL_PLANE     0
+#define NYX_GPS_NFW_PROTOCOL_SUPL           1
+#define NYX_GPS_NFW_PROTOCOL_IMS            10
+#define NYX_GPS_NFW_PROTOCOL_SIM            11
+#define NYX_GPS_NFW_PROTOCOL_OTHER          100
+
+typedef uint8_t nyx_gps_nfw_requestor_t;
+#define NYX_GPS_NFW_REQUESTOR_CARRIER               0
+#define NYX_GPS_NFW_REQUESTOR_OEM                   10
+#define NYX_GPS_NFW_REQUESTOR_MODEM_CHIPSET_VENDOR  11
+#define NYX_GPS_NFW_REQUESTOR_GNSS_CHIPSET_VENDOR   12
+#define NYX_GPS_NFW_REQUESTOR_OTHER_CHIPSET_VENDOR  13
+#define NYX_GPS_NFW_REQUESTOR_AUTOMOBILE_CLIENT     20
+#define NYX_GPS_NFW_REQUESTOR_OTHER                 100
+
+typedef uint8_t nyx_gps_nfw_response_type_t;
+#define NYX_GPS_NFW_RESPONSE_REJECTED                       0
+#define NYX_GPS_NFW_RESPONSE_ACCEPTED_NO_LOCATION_PROVIDED  1
+#define NYX_GPS_NFW_RESPONSE_ACCEPTED_LOCATION_PROVIDED     2
+
+typedef struct
+{
+	/** set to sizeof(nyx_gps_nfw_notification_t) */
+	size_t                          size;
+
+	char                            proxy_app_package_name[NYX_GPS_NI_SHORT_STRING_MAXLEN];
+	nyx_gps_nfw_protocol_stack_t    protocol_stack;
+	char                            other_protocol_stack_name[NYX_GPS_NI_SHORT_STRING_MAXLEN];
+	nyx_gps_nfw_requestor_t         requestor;
+	char                            requestor_id[NYX_GPS_NI_SHORT_STRING_MAXLEN];
+	nyx_gps_nfw_response_type_t     response_type;
+	bool                            in_emergency_mode;
+	bool                            is_cached_location;
+} nyx_gps_nfw_notification_t;
+
+typedef void (* nyx_gps_nfw_notify_callback)(nyx_gps_nfw_notification_t
+        *notification, void *user_data);
+
+typedef struct
+{
+	void                                   *user_data;
+	nyx_gps_nfw_notify_callback             nfw_notify_cb;
+} nyx_gps_nfw_callbacks_t;
 
 
 

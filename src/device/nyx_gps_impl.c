@@ -338,3 +338,47 @@ nyx_error_t nyx_gps_download_ntp_time(nyx_device_handle_t handle)
 	}
 }
 
+nyx_error_t nyx_gps_get_debug_data(nyx_device_handle_t handle, char *dest,
+                                   size_t dest_len)
+{
+	nyx_device_t *d = (nyx_device_t *)handle;
+	CHECK_DEVICE(d);
+	CHECK_DEVICE_TYPE(d, NYX_DEVICE_GPS);
+
+	if (dest == NULL || dest_len == 0)
+	{
+		return NYX_ERROR_INVALID_VALUE;
+	}
+
+	nyx_gps_get_debug_data_function_t f_ptr = LOOKUP_METHOD(d,
+	        NYX_GPS_GET_DEBUG_DATA_MODULE_METHOD);
+
+	if (f_ptr)
+	{
+		return f_ptr(d, dest, dest_len);
+	}
+	else
+	{
+		return NYX_ERROR_NOT_IMPLEMENTED;
+	}
+}
+
+nyx_error_t nyx_gps_set_nfw_callback(nyx_device_handle_t handle,
+                                     nyx_gps_nfw_callbacks_t *nfw_cbs)
+{
+	nyx_device_t *d = (nyx_device_t *)handle;
+	CHECK_DEVICE(d);
+	CHECK_DEVICE_TYPE(d, NYX_DEVICE_GPS);
+
+	nyx_gps_set_nfw_callback_function_t f_ptr = LOOKUP_METHOD(d,
+	        NYX_GPS_SET_NFW_CALLBACK_MODULE_METHOD);
+
+	if (f_ptr)
+	{
+		return f_ptr(d, nfw_cbs);
+	}
+	else
+	{
+		return NYX_ERROR_NOT_IMPLEMENTED;
+	}
+}

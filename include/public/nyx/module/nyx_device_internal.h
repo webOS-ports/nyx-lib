@@ -181,7 +181,15 @@ typedef enum
 	NYX_CEC_GET_PHYSICAL_ADDRESS_MODULE_METHOD,
 	NYX_CEC_SET_CONFIG_MODULE_METHOD,
 	NYX_CEC_GET_CONFIG_MODULE_METHOD,
-	NYX_CEC_GET_VERSION_MODULE_METHOD
+	NYX_CEC_GET_VERSION_MODULE_METHOD,
+
+	/*
+	 * Appended, not inserted. The identifiers above are positional and are
+	 * shared with every already-built nyx module, so a new entry among the
+	 * other GPS ones would renumber all the device families that follow.
+	 */
+	NYX_GPS_GET_DEBUG_DATA_MODULE_METHOD,
+	NYX_GPS_SET_NFW_CALLBACK_MODULE_METHOD
 }
 module_method_t;
 
@@ -470,6 +478,17 @@ typedef nyx_error_t (*nyx_gps_pause_geofence_function_t)(nyx_device_t *,
         int32_t);
 typedef nyx_error_t (*nyx_gps_resume_geofence_function_t)(nyx_device_t *,
         int32_t, int);
+
+/*
+ * Diagnostics from the GNSS engine, rendered as text. The underlying HAL data
+ * is a nested structure whose shape varies by version; nyx does not model it,
+ * for the same reason Android surfaces it through dumpsys rather than an API.
+ */
+typedef nyx_error_t (*nyx_gps_get_debug_data_function_t)(nyx_device_t *, char *,
+        size_t);
+
+typedef nyx_error_t (*nyx_gps_set_nfw_callback_function_t)(nyx_device_t *,
+        nyx_gps_nfw_callbacks_t *);
 typedef nyx_error_t (*nyx_gps_init_xtra_client_function_t)(nyx_device_t *,
         nyx_gps_xtra_client_config_t *, nyx_gps_xtra_client_callbacks_t *);
 typedef nyx_error_t (*nyx_gps_stop_xtra_client_function_t)(nyx_device_t *);

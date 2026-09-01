@@ -187,6 +187,29 @@ NYX_API_EXPORT nyx_error_t nyx_gps_download_ntp_time(nyx_device_handle_t
         handle);
 
 
+// Diagnostics
+/**
+ * Retrieve a human readable dump of the GNSS engine's internal state - its
+ * position and time estimates and what it knows about each satellite. Intended
+ * for diagnosing why a device is not getting a fix. The text is written to
+ * dest, which must be at least NYX_GPS_DEBUG_DATA_MAXLEN bytes.
+ */
+NYX_API_EXPORT nyx_error_t nyx_gps_get_debug_data(nyx_device_handle_t handle,
+        char *dest,
+        size_t dest_len);
+
+
+
+// Non-framework location notifications
+/**
+ * Register for notifications that something outside the platform asked for the
+ * device's location. Unlike a network-initiated request these are reports of
+ * what already happened and take no response.
+ */
+NYX_API_EXPORT nyx_error_t nyx_gps_set_nfw_callback(nyx_device_handle_t handle,
+        nyx_gps_nfw_callbacks_t *nfw_cbs);
+
+
 
 #ifdef __cplusplus
 }
