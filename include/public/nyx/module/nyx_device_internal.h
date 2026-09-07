@@ -189,7 +189,10 @@ typedef enum
 	 * other GPS ones would renumber all the device families that follow.
 	 */
 	NYX_GPS_GET_DEBUG_DATA_MODULE_METHOD,
-	NYX_GPS_SET_NFW_CALLBACK_MODULE_METHOD
+	NYX_GPS_SET_NFW_CALLBACK_MODULE_METHOD,
+	/* battery module functions, multiple batteries; appended for the same reason */
+	NYX_BATTERY_QUERY_BATTERY_COUNT_MODULE_METHOD,
+	NYX_BATTERY_QUERY_BATTERY_INFO_MODULE_METHOD
 }
 module_method_t;
 
@@ -296,6 +299,10 @@ typedef nyx_error_t (*nyx_battery_set_fake_mode_function_t)(
     nyx_device_t *, bool);
 typedef nyx_error_t (*nyx_battery_get_fake_mode_function_t)(
     nyx_device_t *, bool *);
+typedef nyx_error_t (*nyx_battery_query_battery_count_function_t)(
+    nyx_device_t *, int32_t *);
+typedef nyx_error_t (*nyx_battery_query_battery_info_function_t)(
+    nyx_device_t *, int32_t, nyx_battery_info_t *);
 typedef nyx_error_t (*nyx_firmware_update_query_current_version_function_t)(
     nyx_device_t *, char **);
 typedef nyx_error_t (
