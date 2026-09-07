@@ -72,3 +72,17 @@ nyx_error_t nyx_battery_get_fake_mode(nyx_device_handle_t handle,
 	nyx_execute_return_function(battery_get_fake_mode, BATTERY,
 	                            GET_FAKE_MODE, handle, enable);
 }
+
+nyx_error_t nyx_battery_query_battery_count(nyx_device_handle_t handle,
+        int32_t *count)
+{
+	nyx_execute_return_function(battery_query_battery_count, BATTERY,
+	                            QUERY_BATTERY_COUNT, handle, count);
+}
+
+nyx_error_t nyx_battery_query_battery_info(nyx_device_handle_t handle,
+        int32_t index, nyx_battery_info_t *info)
+{
+	nyx_execute_return_function(battery_query_battery_info, BATTERY,
+	                            QUERY_BATTERY_INFO, handle, index, info);
+}

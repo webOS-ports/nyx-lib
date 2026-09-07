@@ -57,6 +57,31 @@ typedef struct
 } nyx_battery_status_t;
 
 /**
+ * Maximum length, including the terminating NUL, of the identifying strings
+ * carried by @ref nyx_battery_info_t.
+ */
+#define NYX_BATTERY_NAME_MAX 64
+
+/**
+ * Identity and readings for one battery out of possibly several.
+ *
+ * A device can carry more than one cell: the PinePhone (Pro) keyboard has its
+ * own battery, which charges the phone over USB and appears alongside the
+ * phone's own as a second power_supply of type "Battery". @ref
+ * nyx_battery_query_battery_status() keeps reporting the primary battery, so
+ * charging logic and low-battery shutdown are unaffected; the extra cells are
+ * reached with @ref nyx_battery_query_battery_count() and @ref
+ * nyx_battery_query_battery_info().
+ */
+typedef struct
+{
+	char name[NYX_BATTERY_NAME_MAX];    /** power_supply node name, e.g. "ip5xxx-battery" */
+	char role[NYX_BATTERY_NAME_MAX];    /** what it powers: "main", "keyboard", ... */
+	bool primary;                       /** True for the battery the charging logic follows */
+	nyx_battery_status_t status;        /** Readings, as nyx_battery_query_battery_status() reports them */
+} nyx_battery_info_t;
+
+/**
  * Battery Charging Parameters
  */
 typedef struct
