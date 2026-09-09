@@ -64,6 +64,17 @@ static int32_t _static_scan_directory(const char *directory_str,
 
 	DIR *dir = opendir(directory_str);
 
+	/*
+	 * A module directory that is not there is not an error - the mock
+	 * directory is absent from any image that ships without mock modules,
+	 * and NYX_FILTER_INCLUDE_MOCK_DEVICES asks for it regardless. Handing
+	 * the NULL straight to readdir() crashed the caller instead.
+	 */
+	if (NULL == dir)
+	{
+		return 0;
+	}
+
 	while ((dp = readdir(dir)) != NULL)
 	{
 		int32_t filename_str_length = strlen(dp->d_name);
