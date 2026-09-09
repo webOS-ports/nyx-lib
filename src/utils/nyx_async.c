@@ -85,16 +85,18 @@ nyx_error_t nyx_utils_async_callback(nyx_device_t *device_in_ptr,
 	{
 		nyx_error(MSGID_NYX_ASYNC_CALLBACK_ERR, 0,
 		          "Could not set thread stack size for display_brightness_thead.");
+		pthread_attr_destroy(&thread_attr);
 		return NYX_ERROR_GENERIC;
 	}
 
 	pthread_t thread;
-	struct callback_data *d = (struct callback_data *)calloc(sizeof(
-	                              struct callback_data), 1);
+	struct callback_data *d = (struct callback_data *)calloc(1,
+	                          sizeof(struct callback_data));
 
 	if(d == NULL)
 	{
 		nyx_error(MSGID_NYX_PTHREAD_CREATE_ERR, 0, "Could not allocate the memory");
+		pthread_attr_destroy(&thread_attr);
 		return NYX_ERROR_OUT_OF_MEMORY;
 	}
 	d->device_ptr = device_in_ptr;
@@ -106,8 +108,16 @@ nyx_error_t nyx_utils_async_callback(nyx_device_t *device_in_ptr,
 	{
 		nyx_error(MSGID_NYX_PTHREAD_CREATE_ERR, 0, "Could not create a new thread");
 		free(d);
+		pthread_attr_destroy(&thread_attr);
 		return NYX_ERROR_GENERIC;
 	}
+
+	/*
+	 * The new thread keeps no reference to the attributes, so they can go as
+	 * soon as it exists. Every path out of here used to leave them
+	 * initialised and never released.
+	 */
+	pthread_attr_destroy(&thread_attr);
 
 	return NYX_ERROR_NONE;
 }
