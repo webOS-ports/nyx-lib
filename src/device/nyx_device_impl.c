@@ -421,6 +421,13 @@ nyx_error_t nyx_device_open(nyx_device_type_t type, nyx_device_id_t id,
 		return NYX_ERROR_INCOMPATIBLE_LIBRARY;
 	}
 
+	/*
+	 * This is what the module receives as its nyx_instance_t, and it lives on
+	 * this stack frame - as do the token strings, which are freed the moment
+	 * open_ptr() returns. A module may use the instance handle, and anything
+	 * nyx_module_get_argument_value() hands back, only for the duration of its
+	 * nyx_module_open(); storing either leaves it holding freed memory.
+	 */
 	struct nyx_instance_data instance;
 
 	instance.tokens = tokens;
