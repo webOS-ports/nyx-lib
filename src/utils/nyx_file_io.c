@@ -49,7 +49,7 @@ int32_t nyx_utils_read_value(char *path)
 		return -1;
 	}
 
-	int fd = open(path, O_RDONLY);
+	int fd = open(path, O_RDONLY | O_CLOEXEC);
 
 	if (fd >= 0)
 	{
@@ -77,38 +77,55 @@ int32_t nyx_utils_read_value(char *path)
 	return val;
 }
 
+/**
+ * Read a file into a caller-supplied buffer.
+ *
+ * Returns the number of bytes stored, or -1 on failure. The buffer is left
+ * holding a valid string either way: callers pass uninitialised stack buffers,
+ * and one that tested the result for truth rather than for -1 took the failure
+ * return as success and ran strstr() over whatever the stack happened to hold.
+ * Terminating up front means the worst such a caller can do is read "".
+ */
 int32_t nyx_utils_read(char *path, char *buf, size_t size)
 {
-	if (!path || !buf || size == 0)
+	if (!buf || size == 0)
+	{
+		return -1;
+	}
+
+	buf[0] = '\0';
+
+	if (!path)
 	{
 		return -1;
 	}
 
 	if (size == 1)
 	{
-		buf[0] = '\0';
 		return 0;
 	}
 
-	int fd = open(path, O_RDONLY);
+	int fd = open(path, O_RDONLY | O_CLOEXEC);
 
 	if (fd == -1)
 	{
 		return -1;
 	}
 
-	ssize_t count = read(fd, buf, size - 1);
+	ssize_t count;
+
+	do
+	{
+		count = read(fd, buf, size - 1);
+	}
+	while (count < 0 && EINTR == errno);
 
 	if (count > 0)
 	{
+		/* read() gave us at most size - 1, so this stays inside the buffer */
 		while (count > 0 && buf[count - 1] == '\n')
 		{
 			count--;
-		}
-
-		if (count >= size)
-		{
-			count = size - 1;
 		}
 
 		buf[count] = '\0';
@@ -116,10 +133,56 @@ int32_t nyx_utils_read(char *path, char *buf, size_t size)
 	else
 	{
 		buf[0] = '\0';
+
+		if (count < 0)
+		{
+			close(fd);
+			return -1;
+		}
 	}
 
 	close(fd);
-	return count;
+	return (int32_t) count;
+}
+
+/**
+ * Write the whole buffer, resuming where a short write left off.
+ *
+ * Returns 0 when everything was written, -1 otherwise.
+ *
+ * The loop this replaced compared a ssize_t against a size_t, so the -1 from a
+ * failed write() converted to SIZE_MAX and compared greater than the length:
+ * the retry stopped and, worse, the error test just below it read false, so
+ * every failed write was reported as a success. It also re-sent the buffer from
+ * the beginning on a partial write, duplicating whatever had already landed.
+ */
+static int write_all(int fd, const char *buf, size_t size)
+{
+	size_t offset = 0;
+
+	while (offset < size)
+	{
+		ssize_t written = write(fd, buf + offset, size - offset);
+
+		if (written < 0)
+		{
+			if (EINTR == errno)
+			{
+				continue;
+			}
+
+			return -1;
+		}
+
+		if (0 == written)
+		{
+			return -1;
+		}
+
+		offset += (size_t) written;
+	}
+
+	return 0;
 }
 
 void nyx_utils_write_value(char *path, int32_t val)
@@ -129,23 +192,14 @@ void nyx_utils_write_value(char *path, int32_t val)
 		return;
 	}
 
-	int fd = open(path, O_WRONLY);
+	int fd = open(path, O_WRONLY | O_CLOEXEC);
 
 	if (fd >= 0)
 	{
 		char buffer[READ_BUFFER_SIZE];
 		snprintf(buffer, READ_BUFFER_SIZE, "%" PRIi32, val);
 
-		ssize_t written;
-		size_t to_write = strlen(buffer);
-
-		do
-		{
-			written = write(fd, buffer, to_write);
-		}
-		while (written < to_write && EINTR == errno);
-
-		if (written < to_write)
+		if (write_all(fd, buffer, strlen(buffer)) < 0)
 		{
 			nyx_error(MSGID_NYX_UTIL_WRITE_VAL_ERR, 0,
 			          "Could not write value %d to file/device at %s", val, path);
@@ -162,22 +216,14 @@ void nyx_utils_write(char *path, char *buf, size_t size)
 		return;
 	}
 
-	int fd = open(path, O_WRONLY);
+	int fd = open(path, O_WRONLY | O_CLOEXEC);
 
 	if (fd == -1)
 	{
 		return;
 	}
 
-	ssize_t written;
-
-	do
-	{
-		written = write(fd, buf, size);
-	}
-	while (written < size && EINTR == errno);
-
-	if (written < size)
+	if (write_all(fd, buf, size) < 0)
 	{
 		nyx_error(MSGID_NYX_UTIL_WRITE_ERR, 0, "Could not write to file/device at %s",
 		          path);

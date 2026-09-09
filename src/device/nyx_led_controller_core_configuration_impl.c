@@ -71,8 +71,8 @@ nyx_error_t nyx_led_controller_core_configuration_create(
     nyx_led_controller_core_configuration_handle_t *handle_ptr)
 {
 	nyx_led_controller_core_configuration *configuration =
-	    (nyx_led_controller_core_configuration *)calloc(sizeof(
-	                nyx_led_controller_core_configuration), 1);
+	    (nyx_led_controller_core_configuration *)calloc(1,
+	            sizeof(nyx_led_controller_core_configuration));
 
 	if (NULL == configuration)
 	{

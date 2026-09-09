@@ -128,6 +128,45 @@ NYX_API_EXPORT nyx_error_t nyx_battery_set_fake_mode(
 NYX_API_EXPORT nyx_error_t nyx_battery_get_fake_mode(
     nyx_device_handle_t handle, bool *enable);
 
+/**
+ * @brief Query how many batteries the module reports.
+ *
+ * Modules that only ever have one battery need not implement this, in which
+ * case NYX_ERROR_NOT_IMPLEMENTED is returned and the caller should treat the
+ * device as having exactly the one battery that @ref
+ * nyx_battery_query_battery_status() describes.
+ *
+ * The count covers batteries the module knows about, present or not; a
+ * detachable one keeps its slot with status.present false so that its
+ * disappearance is reported rather than silently dropped.
+ *
+ * @param[in]   handle - the device handle
+ * @param[out]  count_out_ptr - number of batteries (needs to be allocated by caller)
+ *
+ * @return error code (NYX_ERROR_NONE if operation is successful)
+ *
+ */
+NYX_API_EXPORT nyx_error_t nyx_battery_query_battery_count(
+    nyx_device_handle_t handle, int32_t *count_out_ptr);
+
+/**
+ * @brief Query identity and readings for one battery.
+ *
+ * Index 0 is the primary battery and reports what @ref
+ * nyx_battery_query_battery_status() reports, so a caller that walks the list
+ * need not query both.
+ *
+ * @param[in]   handle - the device handle
+ * @param[in]   index - 0 .. count-1, as reported by @ref nyx_battery_query_battery_count()
+ * @param[out]  info_out_ptr - identity and current readings (needs to be allocated by caller)
+ *
+ * @return error code (NYX_ERROR_NONE if operation is successful,
+ *         NYX_ERROR_VALUE_OUT_OF_RANGE if index is past the last battery)
+ *
+ */
+NYX_API_EXPORT nyx_error_t nyx_battery_query_battery_info(
+    nyx_device_handle_t handle, int32_t index, nyx_battery_info_t *info_out_ptr);
+
 /** @} */
 #ifdef __cplusplus
 }

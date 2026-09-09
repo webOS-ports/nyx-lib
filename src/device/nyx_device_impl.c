@@ -64,6 +64,17 @@ static int32_t _static_scan_directory(const char *directory_str,
 
 	DIR *dir = opendir(directory_str);
 
+	/*
+	 * A module directory that is not there is not an error - the mock
+	 * directory is absent from any image that ships without mock modules,
+	 * and NYX_FILTER_INCLUDE_MOCK_DEVICES asks for it regardless. Handing
+	 * the NULL straight to readdir() crashed the caller instead.
+	 */
+	if (NULL == dir)
+	{
+		return 0;
+	}
+
 	while ((dp = readdir(dir)) != NULL)
 	{
 		int32_t filename_str_length = strlen(dp->d_name);
@@ -84,6 +95,17 @@ static int32_t _static_scan_directory(const char *directory_str,
 						const char *id_str = (char *)strndup(dp->d_name + prefix_length +
 						                                     type_str_length, filename_str_length - prefix_length - type_str_length -
 						                                     suffix_length);
+
+						/*
+						 * Counting an allocation that failed would put a NULL in the
+						 * list, and the iterator reports NULL as "no more devices" -
+						 * so the list would end early, silently, at that entry.
+						 */
+						if (NULL == id_str)
+						{
+							continue;
+						}
+
 						iterator_in_out_ptr->list = g_slist_prepend(iterator_in_out_ptr->list,
 						                            (gpointer)id_str);
 						count++;
@@ -108,8 +130,13 @@ nyx_error_t nyx_device_get_iterator(nyx_device_type_t type,
 		return NYX_ERROR_WRONG_DEVICE_TYPE;
 	}
 
-	struct nyx_device_iterator *i = (struct nyx_device_iterator *)calloc(sizeof(
-	                                    struct nyx_device_iterator), 1);
+	if (NULL == iterator_out_ptr)
+	{
+		return NYX_ERROR_INVALID_VALUE;
+	}
+
+	struct nyx_device_iterator *i = (struct nyx_device_iterator *)calloc(1,
+	                                sizeof(struct nyx_device_iterator));
 
 	if(i == NULL)
 	{
@@ -142,6 +169,23 @@ nyx_error_t nyx_device_iterator_get_next_id(nyx_device_iterator_handle_t
         iterator, nyx_device_id_t *id_out_ptr)
 {
 	struct nyx_device_iterator *i = (struct nyx_device_iterator *)iterator;
+
+	if (NULL == id_out_ptr)
+	{
+		return NYX_ERROR_INVALID_VALUE;
+	}
+
+	/*
+	 * nyx_device_get_iterator() hands back a NULL iterator with
+	 * NYX_ERROR_NONE when it finds no devices, so a caller that just loops
+	 * until the id comes back NULL - which is what the API invites - arrives
+	 * here with NULL and used to dereference it.
+	 */
+	if (NULL == i)
+	{
+		*id_out_ptr = NULL;
+		return NYX_ERROR_INVALID_HANDLE;
+	}
 
 	if (i->current)
 	{
@@ -377,6 +421,13 @@ nyx_error_t nyx_device_open(nyx_device_type_t type, nyx_device_id_t id,
 		return NYX_ERROR_INCOMPATIBLE_LIBRARY;
 	}
 
+	/*
+	 * This is what the module receives as its nyx_instance_t, and it lives on
+	 * this stack frame - as do the token strings, which are freed the moment
+	 * open_ptr() returns. A module may use the instance handle, and anything
+	 * nyx_module_get_argument_value() hands back, only for the duration of its
+	 * nyx_module_open(); storing either leaves it holding freed memory.
+	 */
 	struct nyx_instance_data instance;
 
 	instance.tokens = tokens;
