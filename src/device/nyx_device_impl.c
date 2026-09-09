@@ -95,6 +95,17 @@ static int32_t _static_scan_directory(const char *directory_str,
 						const char *id_str = (char *)strndup(dp->d_name + prefix_length +
 						                                     type_str_length, filename_str_length - prefix_length - type_str_length -
 						                                     suffix_length);
+
+						/*
+						 * Counting an allocation that failed would put a NULL in the
+						 * list, and the iterator reports NULL as "no more devices" -
+						 * so the list would end early, silently, at that entry.
+						 */
+						if (NULL == id_str)
+						{
+							continue;
+						}
+
 						iterator_in_out_ptr->list = g_slist_prepend(iterator_in_out_ptr->list,
 						                            (gpointer)id_str);
 						count++;
