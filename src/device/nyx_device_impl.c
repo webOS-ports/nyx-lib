@@ -130,8 +130,13 @@ nyx_error_t nyx_device_get_iterator(nyx_device_type_t type,
 		return NYX_ERROR_WRONG_DEVICE_TYPE;
 	}
 
-	struct nyx_device_iterator *i = (struct nyx_device_iterator *)calloc(sizeof(
-	                                    struct nyx_device_iterator), 1);
+	if (NULL == iterator_out_ptr)
+	{
+		return NYX_ERROR_INVALID_VALUE;
+	}
+
+	struct nyx_device_iterator *i = (struct nyx_device_iterator *)calloc(1,
+	                                sizeof(struct nyx_device_iterator));
 
 	if(i == NULL)
 	{
@@ -164,6 +169,23 @@ nyx_error_t nyx_device_iterator_get_next_id(nyx_device_iterator_handle_t
         iterator, nyx_device_id_t *id_out_ptr)
 {
 	struct nyx_device_iterator *i = (struct nyx_device_iterator *)iterator;
+
+	if (NULL == id_out_ptr)
+	{
+		return NYX_ERROR_INVALID_VALUE;
+	}
+
+	/*
+	 * nyx_device_get_iterator() hands back a NULL iterator with
+	 * NYX_ERROR_NONE when it finds no devices, so a caller that just loops
+	 * until the id comes back NULL - which is what the API invites - arrives
+	 * here with NULL and used to dereference it.
+	 */
+	if (NULL == i)
+	{
+		*id_out_ptr = NULL;
+		return NYX_ERROR_INVALID_HANDLE;
+	}
 
 	if (i->current)
 	{
