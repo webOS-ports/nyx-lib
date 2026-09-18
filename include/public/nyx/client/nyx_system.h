@@ -103,7 +103,11 @@ NYX_API_EXPORT nyx_error_t nyx_system_query_rtc_time(nyx_device_handle_t handle,
  *  - The module performs a single, one-shot suspend: it reads
  *    /sys/power/wakeup_count, writes the value back and then writes "mem" to
  *    /sys/power/state. It does not retry on its own and it never arms
- *    /sys/power/autosleep.
+ *    /sys/power/autosleep. The wait for the kernel's wakeup sources to go
+ *    quiet (the wakeup_count read) is bounded to about a second: a source
+ *    that stays active longer, a held kernel wakelock for instance, yields
+ *    *success == false rather than an indefinitely parked caller, so the
+ *    caller's policy runs again before the next attempt.
  *  - *success == false with NYX_ERROR_NONE means the kernel refused to enter
  *    suspend - typically a wakeup source (kernel wakelock, an interrupt that
  *    raced the attempt) - and that the caller should retry later, after its
