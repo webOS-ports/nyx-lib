@@ -38,6 +38,39 @@ extern "C" {
 */
 
 /**
+ * The condition a battery's own driver reports it to be in.
+ *
+ * This is the driver's verdict rather than anything worked out from the
+ * readings, and mirrors the kernel's POWER_SUPPLY_HEALTH_* values one for
+ * one, so a module has only to map the string in the "health" sysfs
+ * attribute. It is a different question from how worn out the pack is -
+ * see @ref nyx_battery_status_t::capacity_full_design for that - and a pack
+ * can be NYX_BATTERY_HEALTH_GOOD while holding half what it once did.
+ *
+ * NYX_BATTERY_HEALTH_UNKNOWN is zero, so a module that does not answer this
+ * question, or a driver with no "health" attribute, leaves it unknown rather
+ * than claiming the battery is fine.
+ */
+typedef enum
+{
+	NYX_BATTERY_HEALTH_UNKNOWN = 0,
+	NYX_BATTERY_HEALTH_GOOD,
+	NYX_BATTERY_HEALTH_OVERHEAT,
+	NYX_BATTERY_HEALTH_DEAD,
+	NYX_BATTERY_HEALTH_OVERVOLTAGE,
+	NYX_BATTERY_HEALTH_UNSPEC_FAILURE,
+	NYX_BATTERY_HEALTH_COLD,
+	NYX_BATTERY_HEALTH_WATCHDOG_TIMER_EXPIRE,
+	NYX_BATTERY_HEALTH_SAFETY_TIMER_EXPIRE,
+	NYX_BATTERY_HEALTH_OVERCURRENT,
+	NYX_BATTERY_HEALTH_CALIBRATION_REQUIRED,
+	NYX_BATTERY_HEALTH_WARM,
+	NYX_BATTERY_HEALTH_COOL,
+	NYX_BATTERY_HEALTH_HOT,
+	NYX_BATTERY_HEALTH_NO_BATTERY,
+} nyx_battery_health_t;
+
+/**
  * Struct to get current battery readings
  */
 typedef struct
@@ -53,7 +86,21 @@ typedef struct
 	float capacity_raw; /** In mAh*/
 	float capacity_full40;  /** In mAh*/
 	int32_t age;
-	int32_t health;
+	int32_t health;     /** One of @ref nyx_battery_health_t */
+
+	/**
+	 * What the pack held when it left the factory, in mAh, against which
+	 * @ref capacity_full40 is what it holds now. The two together are the
+	 * usual state-of-health figure; on their own neither says anything
+	 * about wear, because a 3000 mAh reading means nothing without knowing
+	 * whether the pack started at 3000 or at 4000.
+	 *
+	 * -1 where the driver does not report it, and equal to capacity_full40
+	 * on a gauge that does no capacity learning and simply repeats the
+	 * design figure - which is not the same as a pack in perfect health,
+	 * and is worth telling apart before showing anyone a percentage.
+	 */
+	float capacity_full_design;
 } nyx_battery_status_t;
 
 /**
