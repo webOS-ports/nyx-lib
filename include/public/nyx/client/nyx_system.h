@@ -90,13 +90,30 @@ NYX_API_EXPORT nyx_error_t nyx_system_query_rtc_time(nyx_device_handle_t handle,
  * @brief Suspend the device.
  *
  * @param[in]  handle - the handle returned from nyx_device_open
- * @param[out] success - true if device was able to suspend
- *
+ * @param[out] success - true if the device suspended and has now resumed,
+ *                       false if it never entered suspend (retry later)
  *
  * @return error code (NYX_ERROR_NONE if operation is successful)
  *
- * Note: This call will return only when the device has resumed again or
- * failed to suspend.
+ * Contract (the same for nyx_system_suspend_async):
+ *
+ *  - The call blocks until the device has resumed again, or until the module
+ *    determined that it could not enter suspend. Call it from a thread that
+ *    may sleep for the whole suspend period, never from a main loop.
+ *  - The module performs a single, one-shot suspend: it reads
+ *    /sys/power/wakeup_count, writes the value back and then writes "mem" to
+ *    /sys/power/state. It does not retry on its own and it never arms
+ *    /sys/power/autosleep. The wait for the kernel's wakeup sources to go
+ *    quiet (the wakeup_count read) is bounded to about a second: a source
+ *    that stays active longer, a held kernel wakelock for instance, yields
+ *    *success == false rather than an indefinitely parked caller, so the
+ *    caller's policy runs again before the next attempt.
+ *  - *success == false with NYX_ERROR_NONE means the kernel refused to enter
+ *    suspend - typically a wakeup source (kernel wakelock, an interrupt that
+ *    raced the attempt) - and that the caller should retry later, after its
+ *    own idle policy has been satisfied again. It is not an error.
+ *  - An error code is returned only for a bad handle or a module that does not
+ *    implement suspend (NYX_ERROR_NOT_IMPLEMENTED).
  *
  */
 
@@ -105,12 +122,21 @@ NYX_API_EXPORT nyx_error_t nyx_system_suspend(nyx_device_handle_t handle,
 
 
 /**
- * @brief Suspend the device asynchronously.
+ * @brief Suspend the device (asynchronous entry point, same contract).
  *
  * @param[in]  handle - the handle returned from nyx_device_open
- * @param[out] success - true if device was able to suspend
+ * @param[out] success - true if the device suspended and has now resumed,
+ *                       false if it never entered suspend (retry later)
  *
  * @return error code (NYX_ERROR_NONE if operation is successful)
+ *
+ * Historically distinct from nyx_system_suspend so that a module could arm an
+ * autosleep-style mechanism and return immediately, with nyx_system_resume
+ * disarming it later. That model is no longer used: every LuneOS module
+ * implements this call with exactly the blocking, one-shot body described for
+ * nyx_system_suspend, so the call returns only once the device has resumed or
+ * failed to enter suspend, and *success == false means "retry later".
+ * sleepd calls this entry point; modules register both with the same body.
  *
  */
 
@@ -118,12 +144,18 @@ NYX_API_EXPORT nyx_error_t nyx_system_suspend_async(nyx_device_handle_t handle,
         bool *success);
 
 /**
- * @brief Resume the device after it was suspended asynchronously.
-+ *
+ * @brief Resume housekeeping after a suspend.
+ *
  * @param[in] handle - the handle returned from nyx_device_open
- * @param[out] success - true if device was able to resume
+ * @param[out] success - true if the module completed its resume housekeeping
  *
  * @return error code (NYX_ERROR_NONE if operation is successful)
+ *
+ * With the blocking suspend contract there is nothing to wake up: the device
+ * has already resumed by the time nyx_system_suspend(_async) returns. This
+ * call only disarms /sys/power/autosleep (writes "off"), and only where that
+ * node exists, so that a device left with autosleep armed by something else
+ * can stay awake. It is safe to call at any time.
  */
 
 NYX_API_EXPORT nyx_error_t nyx_system_resume(nyx_device_handle_t handle,
